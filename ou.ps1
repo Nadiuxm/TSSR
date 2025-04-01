@@ -1,29 +1,55 @@
 $ErrorActionPreference = "Stop"
 
-# === VARIABLES PERSONNALISABLES ===
-$Domaine = "tssr.local"
-$NomNetbios = "ADLAB"
-$DSRMPassword = ConvertTo-SecureString "test@1234" -AsPlainText -Force
-$ScriptOU = "C:\Scripts\ou.ps1"
+Write-Host "🏗️ Création des OU (avec vérification si déjà existantes)..." -ForegroundColor Cyan
 
-# === INSTALLATION DU ROLE ADDS ===
-Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools | Out-Null
+# DN du domaine (ex : DC=tssr,DC=local)
+$DomaineDN = (Get-ADDomain).DistinguishedName
 
-# === AJOUT DE ou.ps1 AU DEMARRAGE (RunOnce) AVEC EXECUTIONPOLICY BYPASS ===
-if (Test-Path $ScriptOU) {
-    $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-    $Cmd = 'powershell.exe -ExecutionPolicy Bypass -File "C:\Scripts\ou.ps1"'
-    New-ItemProperty -Path $RunOnceKey -Name "RunOU" -PropertyType String -Value $Cmd -Force
-} else {
-    Write-Error "Le script $ScriptOU est introuvable. Place-le avant d’exécuter setup-ad.ps1."
-    exit 1
+# Liste des sites (ajoute ici autant que tu veux)
+$Sites = @("Tours", "Bordeaux")
+
+# Liste des sous-OU (sans accents)
+$SousOU = @(
+    "Direction",
+    "Comptabilite",
+    "Ressources-humaines",
+    "Service-informatique",
+    "Logistique",
+    "Coordination",
+    "Regies"
+)
+
+foreach ($site in $Sites) {
+    $OUDN = "OU=$site,$DomaineDN"
+
+    # Créer l'OU principale si elle n'existe pas
+    if (-not (Get-ADOrganizationalUnit -Filter "Name -eq '$site'" -SearchBase $DomaineDN -ErrorAction SilentlyContinue)) {
+        New-ADOrganizationalUnit -Name $site -Path $DomaineDN -ProtectedFromAccidentalDeletion $true
+        Write-Host "✅ OU $site créée." -ForegroundColor Green
+    } else {
+        Write-Host "⏩ OU $site existe déjà, on passe." -ForegroundColor Yellow
+    }
+
+    # Créer les sous-OU dans chaque site
+    foreach ($sou in $SousOU) {
+        $SousOUDN = "OU=$sou,OU=$site,$DomaineDN"
+        if (-not (Get-ADOrganizationalUnit -Filter "Name -eq '$sou'" -SearchBase $OUDN -ErrorAction SilentlyContinue)) {
+            New-ADOrganizationalUnit -Name $sou -Path $OUDN -ProtectedFromAccidentalDeletion $true
+            Write-Host "  ➕ Sous-OU $sou ajoutée à $site" -ForegroundColor Gray
+        } else {
+            Write-Host "  ⏩ Sous-OU $sou déjà existante dans $site" -ForegroundColor DarkGray
+        }
+    }
 }
 
-# === PROMOTION EN CONTROLEUR DE DOMAINE + CREATION FORET ===
-Install-ADDSForest `
-    -DomainName $Domaine `
-    -DomainNetbiosName $NomNetbios `
-    -SafeModeAdministratorPassword $DSRMPassword `
-    -InstallDns `
-    -NoRebootOnCompletion:$false `
-    -Force:$true
+Write-Host "`n🎉 Arborescence des OU créée (ou mise à jour) avec succès !" -ForegroundColor Cyan
+
+# === Lancer automatiquement le script d'import des utilisateurs ===
+$ScriptImport = "C:\Scripts\import-users.ps1"
+
+if (Test-Path $ScriptImport) {
+    Write-Host "`n📦 Lancement de l'import des utilisateurs..." -ForegroundColor Cyan
+    powershell.exe -ExecutionPolicy Bypass -File $ScriptImport
+} else {
+    Write-Host "`n⚠️ Script import-users.ps1 introuvable à l'emplacement : $ScriptImport" -ForegroundColor Red
+}
