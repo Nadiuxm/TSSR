@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 # === VARIABLES PERSONNALISABLES ===
 $Domaine = "tssr.local"
-$NomNetbios = "ADLAB"
+$NomNetbios = "ADDLAB"
 $DSRMPassword = ConvertTo-SecureString "test@1234" -AsPlainText -Force
 $ScriptOU = "C:\Scripts\ou.ps1"
 
