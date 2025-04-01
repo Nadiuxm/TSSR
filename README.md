@@ -1,5 +1,5 @@
 Prérequis :
-- Windows serveur 2025 ou 205
+- Windows serveur 2022 ou 2025
 - Machine Nommé
 - IP fixe
 
@@ -14,6 +14,6 @@ Lancer powershell **EN MODE ADMINISTRATEUR**
 ```
 powershell -ExecutionPolicy Bypass -File "C:\Scripts\setup-ad.ps1"
 ```
-Attendre le redémarrage et loggé le compte admin.
+Attendre le redémarrage et loggez vous en admin.
 
 Allez vous faire un café !
