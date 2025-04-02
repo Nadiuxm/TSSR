@@ -14,6 +14,5 @@ Lancer powershell **EN MODE ADMINISTRATEUR**
 ```
 powershell -ExecutionPolicy Bypass -File "C:\Scripts\setup-ad.ps1"
 ```
-Attendre le redémarrage et loggez vous en admin.
 
 Allez vous faire un café !
