@@ -51,3 +51,6 @@ if (Test-Path $ScriptImport) {
 } else {
     Write-Host "Script introuvable à l'emplacement : $($ScriptImport)" -ForegroundColor Red
 }
+
+# === SUPPRESSION DE LA TÂCHE PLANIFIÉE APRÈS EXECUTION ===
+Unregister-ScheduledTask -TaskName "OU-Auto-Run" -Confirm:$false
