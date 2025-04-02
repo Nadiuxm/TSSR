@@ -9,11 +9,13 @@ $ScriptOU = "C:\Scripts\ou.ps1"
 # === INSTALLATION DU ROLE ADDS ===
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools | Out-Null
 
-# === AJOUT DE ou.ps1 AU DEMARRAGE (RunOnce) AVEC EXECUTIONPOLICY BYPASS ===
+# === PLANIFICATION DE ou.ps1 AU DEMARRAGE SYSTEME (EXECUTIONPOLICY BYPASS) ===
 if (Test-Path $ScriptOU) {
-    $RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-    $Cmd = 'powershell.exe -ExecutionPolicy Bypass -File "C:\Scripts\ou.ps1"'
-    New-ItemProperty -Path $RunOnceKey -Name "RunOU" -PropertyType String -Value $Cmd -Force
+    $Action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-ExecutionPolicy Bypass -File "C:\Scripts\ou.ps1"'
+    $Trigger = New-ScheduledTaskTrigger -AtStartup
+    $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
+
+    Register-ScheduledTask -TaskName "OU-Auto-Run" -Action $Action -Trigger $Trigger -Principal $Principal -Force
 } else {
     Write-Error "Le script $ScriptOU est introuvable. Place-le avant d’exécuter setup-ad.ps1."
     exit 1
